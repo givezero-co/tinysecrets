@@ -15,7 +15,11 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "ts")]
-#[command(author, version, about = "🔐 TinySecrets - Encrypted local secrets manager")]
+#[command(
+    author,
+    version,
+    about = "🔐 TinySecrets - Encrypted local secrets manager"
+)]
 #[command(long_about = r#"
 TinySecrets is an encrypted SQLite-backed .env replacement that never 
 writes secrets to disk in plaintext.
@@ -164,21 +168,21 @@ pub enum Commands {
 /// Prompt for passphrase with confirmation for new stores
 pub fn prompt_new_passphrase() -> anyhow::Result<secrecy::SecretString> {
     use colored::Colorize;
-    
+
     eprintln!("{}", "Creating new secrets store...".cyan());
     eprintln!();
-    
+
     let pass1 = rpassword::prompt_password("Enter passphrase: ")?;
     let pass2 = rpassword::prompt_password("Confirm passphrase: ")?;
-    
+
     if pass1 != pass2 {
         anyhow::bail!("Passphrases do not match");
     }
-    
+
     if pass1.len() < 8 {
         anyhow::bail!("Passphrase must be at least 8 characters");
     }
-    
+
     Ok(secrecy::SecretString::new(pass1))
 }
 
@@ -187,4 +191,3 @@ pub fn prompt_passphrase() -> anyhow::Result<secrecy::SecretString> {
     let pass = rpassword::prompt_password("Passphrase: ")?;
     Ok(secrecy::SecretString::new(pass))
 }
-

@@ -15,20 +15,17 @@ pub fn run(project: &str, environment: &str, output: Option<&str>) -> Result<()>
 
     match output {
         Some(path) => {
-            let mut file = File::create(path)
-                .context(format!("Failed to create output file: {}", path))?;
+            let mut file =
+                File::create(path).context(format!("Failed to create output file: {}", path))?;
             file.write_all(json.as_bytes())?;
-            
+
             eprintln!(
                 "{} Exported {} secrets to {}",
                 "✓".green(),
                 bundle.secrets.len().to_string().bold(),
                 path.cyan()
             );
-            eprintln!(
-                "{} Bundle is encrypted with your passphrase",
-                "ℹ".blue()
-            );
+            eprintln!("{} Bundle is encrypted with your passphrase", "ℹ".blue());
         }
         None => {
             // Output to stdout for piping
@@ -38,4 +35,3 @@ pub fn run(project: &str, environment: &str, output: Option<&str>) -> Result<()>
 
     Ok(())
 }
-

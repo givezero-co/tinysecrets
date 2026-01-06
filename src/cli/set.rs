@@ -16,10 +16,10 @@ pub fn run(project: &str, environment: &str, key: &str, value: Option<&str>) -> 
                 "# Enter the value for {}/{}/{}\n# Lines starting with # will be ignored\n",
                 project, environment, key
             );
-            
+
             let edited = edit::edit(&template)
                 .context("Failed to open editor. Set $EDITOR or pass value directly.")?;
-            
+
             // Filter out comments and trim
             edited
                 .lines()
@@ -37,7 +37,7 @@ pub fn run(project: &str, environment: &str, key: &str, value: Option<&str>) -> 
 
     // Check if updating existing
     let existing = store.get(project, environment, key)?;
-    
+
     store.set(project, environment, key, &secret_value, None)?;
 
     if existing.is_some() {
@@ -60,4 +60,3 @@ pub fn run(project: &str, environment: &str, key: &str, value: Option<&str>) -> 
 
     Ok(())
 }
-

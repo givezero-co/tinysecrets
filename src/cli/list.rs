@@ -45,4 +45,3 @@ pub fn run(project: Option<&str>, environment: Option<&str>) -> Result<()> {
 
     Ok(())
 }
-

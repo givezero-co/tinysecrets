@@ -49,8 +49,7 @@ pub fn run(project: &str, environment: &str, command: &[String]) -> Result<()> {
 
     // exec replaces the current process - this doesn't return on success
     let err = cmd.exec();
-    
+
     // If we get here, exec failed
     Err(err).context(format!("Failed to execute: {}", program))
 }
-

@@ -1,5 +1,5 @@
 //! SQLite-based encrypted secrets store
-//! 
+//!
 //! Schema design:
 //! - secrets: current values (project, env, key, encrypted_value, metadata)
 //! - secret_history: all previous versions for audit trail
@@ -55,7 +55,7 @@ impl Store {
     /// Initialize a new store with the given passphrase
     pub fn init(passphrase: SecretString) -> Result<Self> {
         let path = Self::default_path()?;
-        
+
         if path.exists() {
             anyhow::bail!(
                 "Store already exists at {}. Use `ts` commands to interact with it.",
@@ -65,12 +65,10 @@ impl Store {
 
         // Create directory
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .context("Failed to create ~/.tinysecrets directory")?;
+            std::fs::create_dir_all(parent).context("Failed to create ~/.tinysecrets directory")?;
         }
 
-        let conn = Connection::open(&path)
-            .context("Failed to create SQLite database")?;
+        let conn = Connection::open(&path).context("Failed to create SQLite database")?;
 
         // Create schema
         conn.execute_batch(include_str!("schema.sql"))
@@ -93,15 +91,12 @@ impl Store {
     /// Open an existing store
     pub fn open(passphrase: SecretString) -> Result<Self> {
         let path = Self::default_path()?;
-        
+
         if !path.exists() {
-            anyhow::bail!(
-                "No store found. Run `ts init` first to create one."
-            );
+            anyhow::bail!("No store found. Run `ts init` first to create one.");
         }
 
-        let conn = Connection::open(&path)
-            .context("Failed to open SQLite database")?;
+        let conn = Connection::open(&path).context("Failed to open SQLite database")?;
 
         // Verify passphrase
         let verification: String = conn
@@ -285,7 +280,7 @@ impl Store {
     pub fn get_all(&self, project: &str, environment: &str) -> Result<Vec<(String, String)>> {
         let mut stmt = self.conn.prepare(
             "SELECT key, encrypted_value FROM secrets 
-             WHERE project = ?1 AND environment = ?2"
+             WHERE project = ?1 AND environment = ?2",
         )?;
 
         let secrets = stmt
@@ -316,7 +311,7 @@ impl Store {
              FROM secret_history 
              WHERE project = ?1 AND environment = ?2 AND key = ?3
              ORDER BY version DESC
-             LIMIT ?4"
+             LIMIT ?4",
         )?;
 
         let entries = stmt
@@ -345,9 +340,9 @@ impl Store {
 
     /// List all projects
     pub fn list_projects(&self) -> Result<Vec<String>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT DISTINCT project FROM secrets ORDER BY project"
-        )?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT DISTINCT project FROM secrets ORDER BY project")?;
 
         let projects = stmt
             .query_map([], |row| row.get(0))?
@@ -359,7 +354,7 @@ impl Store {
     /// List all environments for a project
     pub fn list_environments(&self, project: &str) -> Result<Vec<String>> {
         let mut stmt = self.conn.prepare(
-            "SELECT DISTINCT environment FROM secrets WHERE project = ?1 ORDER BY environment"
+            "SELECT DISTINCT environment FROM secrets WHERE project = ?1 ORDER BY environment",
         )?;
 
         let envs = stmt
@@ -381,7 +376,7 @@ impl Store {
                 params![entry.project, entry.environment, entry.key],
                 |row| row.get(0),
             )?;
-            
+
             secrets.push(ExportedSecret {
                 key: entry.key,
                 encrypted_value: encrypted,
@@ -453,4 +448,3 @@ pub struct ExportedSecret {
     pub description: Option<String>,
     pub version: i32,
 }
-

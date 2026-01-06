@@ -27,4 +27,3 @@ pub fn run(project: &str, environment: &str, key: &str) -> Result<()> {
 
     Ok(())
 }
-

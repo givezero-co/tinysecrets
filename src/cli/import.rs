@@ -9,11 +9,11 @@ pub fn run(input: &str) -> Result<()> {
     let passphrase = prompt_passphrase()?;
     let store = Store::open(passphrase)?;
 
-    let json = fs::read_to_string(input)
-        .context(format!("Failed to read input file: {}", input))?;
-    
-    let bundle: ExportBundle = serde_json::from_str(&json)
-        .context("Failed to parse export bundle (invalid format)")?;
+    let json =
+        fs::read_to_string(input).context(format!("Failed to read input file: {}", input))?;
+
+    let bundle: ExportBundle =
+        serde_json::from_str(&json).context("Failed to parse export bundle (invalid format)")?;
 
     eprintln!(
         "{} Importing {}/{} ({} secrets)...",
@@ -35,4 +35,3 @@ pub fn run(input: &str) -> Result<()> {
 
     Ok(())
 }
-

@@ -13,47 +13,48 @@ use crate::store::Store;
 /// - export KEY=VALUE (shell export)
 fn parse_line(line: &str) -> Option<(String, String)> {
     let line = line.trim();
-    
+
     // Skip empty lines and comments
     if line.is_empty() || line.starts_with('#') {
         return None;
     }
-    
+
     // Remove 'export ' prefix if present
     let line = line.strip_prefix("export ").unwrap_or(line);
-    
+
     // Try KEY=VALUE first
     if let Some((key, value)) = line.split_once('=') {
         let key = key.trim();
         let value = value.trim();
         // Remove surrounding quotes if present
         let value = value
-            .strip_prefix('"').and_then(|v| v.strip_suffix('"'))
+            .strip_prefix('"')
+            .and_then(|v| v.strip_suffix('"'))
             .or_else(|| value.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')))
             .unwrap_or(value);
-        
+
         if !key.is_empty() {
             return Some((key.to_string(), value.to_string()));
         }
     }
-    
+
     // Try KEY: VALUE (heroku style)
     if let Some((key, value)) = line.split_once(':') {
         let key = key.trim();
         let value = value.trim();
-        
+
         if !key.is_empty() && !key.contains(' ') {
             return Some((key.to_string(), value.to_string()));
         }
     }
-    
+
     None
 }
 
 pub fn run(project: &str, environment: &str, file: Option<&str>) -> Result<()> {
     // Check if we have input
     let stdin = io::stdin();
-    
+
     if file.is_none() && stdin.is_terminal() {
         anyhow::bail!(
             "No input provided. Pipe data or specify a file:\n\
@@ -69,18 +70,16 @@ pub fn run(project: &str, environment: &str, file: Option<&str>) -> Result<()> {
     let store = Store::open(passphrase)?;
 
     let lines: Vec<String> = match file {
-        Some(path) => {
-            std::fs::read_to_string(path)
-                .context(format!("Failed to read file: {}", path))?
-                .lines()
-                .map(String::from)
-                .collect()
-        }
-        None => {
-            stdin.lock().lines()
-                .collect::<Result<Vec<_>, _>>()
-                .context("Failed to read from stdin")?
-        }
+        Some(path) => std::fs::read_to_string(path)
+            .context(format!("Failed to read file: {}", path))?
+            .lines()
+            .map(String::from)
+            .collect(),
+        None => stdin
+            .lock()
+            .lines()
+            .collect::<Result<Vec<_>, _>>()
+            .context("Failed to read from stdin")?,
     };
 
     let mut imported = 0;
@@ -89,11 +88,7 @@ pub fn run(project: &str, environment: &str, file: Option<&str>) -> Result<()> {
     for line in lines {
         if let Some((key, value)) = parse_line(&line) {
             store.set(project, environment, &key, &value, None)?;
-            eprintln!(
-                "  {} {}",
-                "✓".green(),
-                key.bold()
-            );
+            eprintln!("  {} {}", "✓".green(), key.bold());
             imported += 1;
         } else if !line.trim().is_empty() && !line.trim().starts_with('#') {
             eprintln!(
@@ -116,11 +111,7 @@ pub fn run(project: &str, environment: &str, file: Option<&str>) -> Result<()> {
         );
     }
     if skipped > 0 {
-        eprintln!(
-            "{} Skipped {} unparseable lines",
-            "○".yellow(),
-            skipped
-        );
+        eprintln!("{} Skipped {} unparseable lines", "○".yellow(), skipped);
     }
     if imported == 0 && skipped == 0 {
         eprintln!("{} No secrets found in input", "○".yellow());
@@ -137,7 +128,10 @@ mod tests {
     fn test_parse_dotenv() {
         assert_eq!(
             parse_line("DATABASE_URL=postgres://localhost/db"),
-            Some(("DATABASE_URL".to_string(), "postgres://localhost/db".to_string()))
+            Some((
+                "DATABASE_URL".to_string(),
+                "postgres://localhost/db".to_string()
+            ))
         );
     }
 
@@ -157,7 +151,10 @@ mod tests {
     fn test_parse_heroku() {
         assert_eq!(
             parse_line("DATABASE_URL: postgres://localhost/db"),
-            Some(("DATABASE_URL".to_string(), "postgres://localhost/db".to_string()))
+            Some((
+                "DATABASE_URL".to_string(),
+                "postgres://localhost/db".to_string()
+            ))
         );
     }
 
@@ -181,7 +178,10 @@ mod tests {
         // Values can contain = signs (common in URLs, base64, etc.)
         assert_eq!(
             parse_line("DATABASE_URL=postgres://user:pass@host/db?ssl=true"),
-            Some(("DATABASE_URL".to_string(), "postgres://user:pass@host/db?ssl=true".to_string()))
+            Some((
+                "DATABASE_URL".to_string(),
+                "postgres://user:pass@host/db?ssl=true".to_string()
+            ))
         );
     }
 
@@ -201,4 +201,3 @@ mod tests {
         );
     }
 }
-
