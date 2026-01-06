@@ -1,0 +1,61 @@
+[package]
+name = "tinysecrets"
+version = "0.1.0"
+edition = "2021"
+description = "An encrypted SQLite-backed .env replacement that never writes secrets to disk in plaintext"
+authors = ["tinysecrets contributors"]
+license = "MIT"
+repository = "https://github.com/givezero/tinysecrets"
+keywords = ["secrets", "encryption", "cli", "dotenv", "sqlite"]
+categories = ["command-line-utilities", "cryptography"]
+
+[[bin]]
+name = "ts"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.4", features = ["derive", "env"] }
+
+# Database
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# Encryption (age - modern, simple, secure)
+age = { version = "0.10", features = ["armor"] }
+secrecy = "0.8"
+
+# Password handling
+rpassword = "7.3"
+
+# Crypto utilities
+rand = "0.8"
+base64 = "0.21"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Directory management
+dirs = "5.0"
+
+# Terminal colors
+colored = "2.1"
+
+# Editor support
+edit = "0.1"
+
+# Note: We use std::os::unix::process::CommandExt for exec()
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"
+
