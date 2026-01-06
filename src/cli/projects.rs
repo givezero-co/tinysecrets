@@ -18,7 +18,7 @@ pub fn run() -> Result<()> {
 
     println!("{}", "Projects:".bold());
     for project in projects {
-        println!("  {} {}", "📦".to_string(), project.cyan());
+        println!("  📦 {}", project.cyan());
     }
 
     Ok(())

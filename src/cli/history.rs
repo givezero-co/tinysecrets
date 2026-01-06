@@ -22,8 +22,7 @@ pub fn run(project: &str, environment: &str, key: &str, limit: usize) -> Result<
     }
 
     println!(
-        "{} History for {}/{}/{}",
-        "📜",
+        "📜 History for {}/{}/{}",
         project.cyan(),
         environment.yellow(),
         key.bold()

@@ -26,7 +26,7 @@ pub fn run(project: Option<&str>, environment: Option<&str>) -> Result<()> {
             }
             current_project = entry.project.clone();
             current_env = String::new();
-            println!("{} {}", "📦".to_string(), entry.project.cyan().bold());
+            println!("📦 {}", entry.project.cyan().bold());
         }
 
         if entry.environment != current_env {

@@ -19,11 +19,7 @@ pub fn run(project: &str) -> Result<()> {
         return Ok(());
     }
 
-    println!(
-        "{} {} environments:",
-        "📦".to_string(),
-        project.cyan().bold()
-    );
+    println!("📦 {} environments:", project.cyan().bold());
     for env in envs {
         println!("  {} {}", "└".dimmed(), env.yellow());
     }
