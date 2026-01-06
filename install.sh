@@ -1,6 +1,6 @@
 #!/bin/sh
 # TinySecrets Installer
-# Usage: curl -sSfL https://raw.githubusercontent.com/givezero/tinysecrets/main/install.sh | sh
+# Usage: curl -sSfL https://raw.githubusercontent.com/givezero-co/tinysecrets/main/install.sh | sh
 #
 # This script downloads and installs the tinysecrets (ts) binary.
 # It supports macOS (arm64, x86_64) and Linux (x86_64, arm64).
@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Configuration
-REPO="givezero/tinysecrets"
+REPO="givezero-co/tinysecrets"
 BINARY_NAME="ts"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 

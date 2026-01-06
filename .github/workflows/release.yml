@@ -53,12 +53,15 @@ jobs:
           cd dist
           tar czvf "${ARCHIVE_NAME}.tar.gz" ts
           shasum -a 256 "${ARCHIVE_NAME}.tar.gz" > "${ARCHIVE_NAME}.tar.gz.sha256"
+          rm ts  # Remove raw binary, only keep tarball
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: dist/*
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
 
   release:
     name: Create Release

@@ -5,7 +5,7 @@ edition = "2021"
 description = "An encrypted SQLite-backed .env replacement that never writes secrets to disk in plaintext"
 authors = ["tinysecrets contributors"]
 license = "MIT"
-repository = "https://github.com/givezero/tinysecrets"
+repository = "https://github.com/givezero-co/tinysecrets"
 keywords = ["secrets", "encryption", "cli", "dotenv", "sqlite"]
 categories = ["command-line-utilities", "cryptography"]
 

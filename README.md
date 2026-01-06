@@ -23,19 +23,19 @@ No daemon. No ports. No migrations service. No infra. Just:
 ### Quick Install (macOS & Linux)
 
 ```bash
-curl -sSfL https://raw.githubusercontent.com/givezero/tinysecrets/main/install.sh | sh
+curl -sSfL https://raw.githubusercontent.com/givezero-co/tinysecrets/main/install.sh | sh
 ```
 
 ### From Source
 
 ```bash
-cargo install --git https://github.com/givezero/tinysecrets
+cargo install --git https://github.com/givezero-co/tinysecrets
 ```
 
 ### Homebrew (coming soon)
 
 ```bash
-brew install givezero/tap/tinysecrets
+brew install givezero-co/tap/tinysecrets
 ```
 
 ## Quick Start
@@ -350,7 +350,7 @@ Keep your passphrase in a password manager!
 
 ```bash
 # Clone
-git clone https://github.com/givezero/tinysecrets
+git clone https://github.com/givezero-co/tinysecrets
 cd tinysecrets
 
 # Build
