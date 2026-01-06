@@ -45,6 +45,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # Directory management
 dirs = "5.0"
 
+# System keychain (macOS Keychain, Linux Secret Service, Windows Credential Manager)
+keyring = "3"
+
 # Terminal colors
 colored = "2.1"
 

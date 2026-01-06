@@ -295,6 +295,28 @@ For small trusted teams, sync the SQLite file directly:
 # Everyone uses the same passphrase
 ```
 
+## Keychain Integration
+
+TinySecrets can store your passphrase in the system keychain so you don't have to type it every time:
+
+- **macOS**: Keychain
+- **Linux**: Secret Service (GNOME Keyring, KWallet)
+- **Windows**: Credential Manager
+
+```bash
+# Check keychain status
+ts keychain status
+
+# Remove passphrase from keychain
+ts keychain clear
+```
+
+When you first run a command, you'll be asked if you want to save your passphrase to the keychain. This is secure because:
+
+- The keychain is protected by your system login password
+- Your secrets database is still encrypted - the keychain just stores the key
+- You can clear it anytime with `ts keychain clear`
+
 ## Security Model
 
 ### What TinySecrets Protects Against

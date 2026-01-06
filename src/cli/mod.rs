@@ -6,6 +6,7 @@ pub mod history;
 pub mod import;
 pub mod import_env;
 pub mod init;
+pub mod keychain_cmd;
 pub mod list;
 pub mod projects;
 pub mod run;
@@ -163,6 +164,20 @@ pub enum Commands {
         /// Project name
         project: String,
     },
+
+    /// Manage system keychain integration
+    Keychain {
+        #[command(subcommand)]
+        action: KeychainAction,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum KeychainAction {
+    /// Show keychain status
+    Status,
+    /// Remove passphrase from keychain
+    Clear,
 }
 
 /// Prompt for passphrase with confirmation for new stores
@@ -183,11 +198,56 @@ pub fn prompt_new_passphrase() -> anyhow::Result<secrecy::SecretString> {
         anyhow::bail!("Passphrase must be at least 8 characters");
     }
 
-    Ok(secrecy::SecretString::new(pass1))
+    let passphrase = secrecy::SecretString::new(pass1);
+
+    // Offer to save to keychain
+    eprintln!();
+    eprint!("Save passphrase to system keychain? [Y/n] ");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+    let input = input.trim().to_lowercase();
+
+    if input.is_empty() || input == "y" || input == "yes" {
+        match crate::keychain::store_passphrase(&passphrase) {
+            Ok(()) => eprintln!("{} Passphrase saved to keychain", "✓".green()),
+            Err(e) => eprintln!("{} Could not save to keychain: {}", "⚠".yellow(), e),
+        }
+    }
+
+    Ok(passphrase)
 }
 
-/// Prompt for existing passphrase
+/// Prompt for existing passphrase (tries keychain first)
 pub fn prompt_passphrase() -> anyhow::Result<secrecy::SecretString> {
+    use colored::Colorize;
+
+    // Try keychain first
+    match crate::keychain::get_passphrase() {
+        Ok(Some(passphrase)) => {
+            eprintln!("🔑 Using passphrase from keychain");
+            return Ok(passphrase);
+        }
+        Ok(None) => {} // No stored passphrase, prompt
+        Err(e) => {
+            eprintln!("{} Keychain error: {}", "⚠".yellow(), e);
+        }
+    }
+
     let pass = rpassword::prompt_password("Passphrase: ")?;
-    Ok(secrecy::SecretString::new(pass))
+    let passphrase = secrecy::SecretString::new(pass);
+
+    // Offer to save for next time
+    eprint!("Save to keychain for next time? [Y/n] ");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+    let input = input.trim().to_lowercase();
+
+    if input.is_empty() || input == "y" || input == "yes" {
+        match crate::keychain::store_passphrase(&passphrase) {
+            Ok(()) => eprintln!("{} Passphrase saved to keychain", "✓".green()),
+            Err(e) => eprintln!("{} Could not save to keychain: {}", "⚠".yellow(), e),
+        }
+    }
+
+    Ok(passphrase)
 }

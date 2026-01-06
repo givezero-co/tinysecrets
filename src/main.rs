@@ -1,5 +1,6 @@
 mod cli;
 mod crypto;
+mod keychain;
 mod store;
 
 use anyhow::Result;
@@ -55,6 +56,7 @@ fn main() -> Result<()> {
         } => cli::history::run(&project, &environment, &key, limit)?,
         Commands::Projects => cli::projects::run()?,
         Commands::Envs { project } => cli::envs::run(&project)?,
+        Commands::Keychain { action } => cli::keychain_cmd::run(action)?,
     }
 
     Ok(())
