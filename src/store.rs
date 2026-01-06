@@ -338,6 +338,52 @@ impl Store {
         Ok(entries)
     }
 
+    /// Get a specific version of a secret from history
+    pub fn get_version(
+        &self,
+        project: &str,
+        environment: &str,
+        key: &str,
+        version: i32,
+    ) -> Result<Option<String>> {
+        // First check if requesting current version
+        let current: Option<(i32, String)> = self
+            .conn
+            .query_row(
+                "SELECT version, encrypted_value FROM secrets 
+                 WHERE project = ?1 AND environment = ?2 AND key = ?3",
+                params![project, environment, key],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .ok();
+
+        if let Some((current_version, encrypted)) = current {
+            if current_version == version {
+                let decrypted = crypto::decrypt(&encrypted, &self.passphrase)?;
+                return Ok(Some(decrypted.expose_secret().clone()));
+            }
+        }
+
+        // Check history
+        let encrypted: Option<String> = self
+            .conn
+            .query_row(
+                "SELECT encrypted_value FROM secret_history 
+                 WHERE project = ?1 AND environment = ?2 AND key = ?3 AND version = ?4",
+                params![project, environment, key, version],
+                |row| row.get(0),
+            )
+            .ok();
+
+        match encrypted {
+            Some(enc) => {
+                let decrypted = crypto::decrypt(&enc, &self.passphrase)?;
+                Ok(Some(decrypted.expose_secret().clone()))
+            }
+            None => Ok(None),
+        }
+    }
+
     /// List all projects
     pub fn list_projects(&self) -> Result<Vec<String>> {
         let mut stmt = self

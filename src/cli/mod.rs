@@ -74,6 +74,9 @@ pub enum Commands {
         environment: String,
         /// Secret key name
         key: String,
+        /// Get a specific version (from history)
+        #[arg(long, visible_alias = "rev")]
+        version: Option<i32>,
     },
 
     /// List secrets
@@ -154,6 +157,9 @@ pub enum Commands {
         /// Number of entries to show
         #[arg(short, long, default_value = "10")]
         limit: usize,
+        /// Show the actual values
+        #[arg(short, long)]
+        show: bool,
     },
 
     /// List all projects

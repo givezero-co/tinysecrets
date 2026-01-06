@@ -121,6 +121,9 @@ ts get api staging DATABASE_URL
 # Use in scripts
 export DB=$(ts get api staging DATABASE_URL)
 
+# Get a previous version
+ts get api staging DATABASE_URL --version 1
+
 # Aliases: ts g
 ```
 
@@ -163,7 +166,22 @@ ts delete api staging OLD_KEY
 View the change history of a secret.
 
 ```bash
+# Show history (versions and timestamps)
 ts history api staging DATABASE_URL
+
+# Show history with actual values
+ts history api staging DATABASE_URL --show
+```
+
+**Example output with `--show`:**
+```
+📜 History for api/staging/DATABASE_URL
+
+  • v2 - current (latest)
+    postgres://newhost/db
+
+  • v1 - archived at 2026-01-06 23:56:01 UTC
+    postgres://oldhost/db
 ```
 
 ### `ts projects`
@@ -392,6 +410,10 @@ cargo build --release
 
 ## Roadmap
 
+- [x] Keychain integration (macOS, Linux, Windows)
+- [x] Bulk import from pipes (`ts import-env`)
+- [x] Version history with `--show` values
+- [x] Retrieve previous versions (`ts get --version`)
 - [ ] Shell completions (bash, zsh, fish)
 - [ ] `ts edit` - edit secret in place
 - [ ] `ts env` - output as .env format (for legacy tools)
