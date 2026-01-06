@@ -1,6 +1,6 @@
 [package]
 name = "tinysecrets"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "An encrypted SQLite-backed .env replacement that never writes secrets to disk in plaintext"
 authors = ["tinysecrets contributors"]
