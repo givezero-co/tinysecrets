@@ -132,4 +132,3 @@ impl ConfigResolver {
         self.config.as_ref()
     }
 }
-

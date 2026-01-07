@@ -128,15 +128,25 @@ COMMON PATTERNS
         } else if line.contains("tinysecrets ") && line.starts_with("  ") {
             // Commands in cyan
             println!("{}", line.cyan());
-        } else if line.contains("────") || line.starts_with("│") || line.starts_with("┌") || line.starts_with("└") {
+        } else if line.contains("────")
+            || line.starts_with("│")
+            || line.starts_with("┌")
+            || line.starts_with("└")
+        {
             // Box drawing in yellow
             println!("{}", line.yellow());
-        } else if line.ends_with("─") || (line.chars().all(|c| c == '─' || c.is_whitespace()) && line.contains("─")) {
+        } else if line.ends_with("─")
+            || (line.chars().all(|c| c == '─' || c.is_whitespace()) && line.contains("─"))
+        {
             // Section headers
             println!("{}", line.yellow());
-        } else if line.chars().next().map(|c| c.is_uppercase()).unwrap_or(false) 
-            && !line.starts_with("  ") 
-            && !line.is_empty() 
+        } else if line
+            .chars()
+            .next()
+            .map(|c| c.is_uppercase())
+            .unwrap_or(false)
+            && !line.starts_with("  ")
+            && !line.is_empty()
         {
             // Section titles in bold
             println!("{}", line.bold());
@@ -145,4 +155,3 @@ COMMON PATTERNS
         }
     }
 }
-

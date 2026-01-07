@@ -42,16 +42,9 @@ fn main() -> Result<()> {
         } => {
             // List can work without project/env (shows all), but use config as default filter
             let resolver = ConfigResolver::new()?;
-            let project = project.or_else(|| {
-                resolver
-                    .config()
-                    .and_then(|c| c.project.clone())
-            });
-            let environment = environment.or_else(|| {
-                resolver
-                    .config()
-                    .and_then(|c| c.environment.clone())
-            });
+            let project = project.or_else(|| resolver.config().and_then(|c| c.project.clone()));
+            let environment =
+                environment.or_else(|| resolver.config().and_then(|c| c.environment.clone()));
             cli::list::run(project.as_deref(), environment.as_deref())?
         }
         Commands::Delete {
