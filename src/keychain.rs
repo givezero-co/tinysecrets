@@ -5,7 +5,6 @@
 
 use anyhow::{Context, Result};
 use secrecy::{ExposeSecret, SecretString};
-use std::process::Command;
 
 const SERVICE_NAME: &str = "tinysecrets";
 const ACCOUNT_NAME: &str = "passphrase";
@@ -14,6 +13,8 @@ const ACCOUNT_NAME: &str = "passphrase";
 pub fn store_passphrase(passphrase: &SecretString) -> Result<()> {
     #[cfg(target_os = "macos")]
     {
+        use std::process::Command;
+
         // Delete existing entry first (ignore errors)
         let _ = Command::new("security")
             .args([
@@ -62,6 +63,8 @@ pub fn store_passphrase(passphrase: &SecretString) -> Result<()> {
 pub fn get_passphrase() -> Result<Option<SecretString>> {
     #[cfg(target_os = "macos")]
     {
+        use std::process::Command;
+
         let output = Command::new("security")
             .args([
                 "find-generic-password",
@@ -100,6 +103,8 @@ pub fn get_passphrase() -> Result<Option<SecretString>> {
 pub fn delete_passphrase() -> Result<bool> {
     #[cfg(target_os = "macos")]
     {
+        use std::process::Command;
+
         let output = Command::new("security")
             .args([
                 "delete-generic-password",
