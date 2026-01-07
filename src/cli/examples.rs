@@ -110,12 +110,24 @@ COMMON PATTERNS
   tinysecrets import-env -f .env.example    # Import starter secrets
   tinysecrets run -- npm run dev
 
-  # CI/CD (passphrase from env var):
-  echo "$TINYSECRETS_PASSPHRASE" | tinysecrets run -- ./deploy.sh
-
   # Multiple environments in monorepo:
   cd services/api && tinysecrets config init api prod
   cd services/web && tinysecrets config init web prod
+
+
+CI/CD
+─────
+  # Set TINYSECRETS_PASSPHRASE in your CI secrets, then:
+  tinysecrets run -- ./deploy.sh            # Auto-detects env var
+
+  # GitHub Actions example:
+  #   env:
+  #     TINYSECRETS_PASSPHRASE: ${{ secrets.TINYSECRETS_PASSPHRASE }}
+  #   run: tinysecrets run -- npm test
+
+  # Import encrypted bundle from repo:
+  tinysecrets import .secrets/prod.tsb
+  tinysecrets run -- ./deploy.sh
 
 
 "#;

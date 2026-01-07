@@ -233,9 +233,25 @@ pub enum ConfigAction {
 }
 
 /// Prompt for passphrase with confirmation for new stores
+/// In CI (env var set), uses that passphrase without prompting
 pub fn prompt_new_passphrase() -> anyhow::Result<secrecy::SecretString> {
     use colored::Colorize;
 
+    // Check environment variable first (for CI/automation)
+    if let Ok(pass) = std::env::var(PASSPHRASE_ENV_VAR) {
+        if !pass.is_empty() {
+            if pass.len() < 8 {
+                anyhow::bail!("Passphrase must be at least 8 characters");
+            }
+            eprintln!(
+                "🔐 Using passphrase from {} for new store",
+                PASSPHRASE_ENV_VAR.cyan()
+            );
+            return Ok(secrecy::SecretString::new(pass));
+        }
+    }
+
+    // Interactive mode
     eprintln!("{}", "Creating new secrets store...".cyan());
     eprintln!();
 
@@ -269,11 +285,23 @@ pub fn prompt_new_passphrase() -> anyhow::Result<secrecy::SecretString> {
     Ok(passphrase)
 }
 
-/// Prompt for existing passphrase (tries keychain first)
+/// Environment variable name for passphrase (CI/automation)
+pub const PASSPHRASE_ENV_VAR: &str = "TINYSECRETS_PASSPHRASE";
+
+/// Prompt for existing passphrase
+/// Priority: 1) env var, 2) keychain, 3) interactive prompt
 pub fn prompt_passphrase() -> anyhow::Result<secrecy::SecretString> {
     use colored::Colorize;
 
-    // Try keychain first
+    // 1. Check environment variable first (for CI/automation)
+    if let Ok(pass) = std::env::var(PASSPHRASE_ENV_VAR) {
+        if !pass.is_empty() {
+            eprintln!("🔐 Using passphrase from {}", PASSPHRASE_ENV_VAR.cyan());
+            return Ok(secrecy::SecretString::new(pass));
+        }
+    }
+
+    // 2. Try keychain
     match crate::keychain::get_passphrase() {
         Ok(Some(passphrase)) => {
             eprintln!("🔑 Using passphrase from keychain");
@@ -285,6 +313,7 @@ pub fn prompt_passphrase() -> anyhow::Result<secrecy::SecretString> {
         }
     }
 
+    // 3. Interactive prompt
     let pass = rpassword::prompt_password("Passphrase: ")?;
     let passphrase = secrecy::SecretString::new(pass);
 
