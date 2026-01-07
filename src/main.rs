@@ -125,6 +125,7 @@ fn main() -> Result<()> {
                 environment,
             } => cli::config::run_set(project.as_deref(), environment.as_deref())?,
         },
+        Commands::Examples => cli::examples::run(),
     }
 
     Ok(())

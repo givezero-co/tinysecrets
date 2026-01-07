@@ -1,6 +1,7 @@
 pub mod config;
 pub mod delete;
 pub mod envs;
+pub mod examples;
 pub mod export;
 pub mod get;
 pub mod history;
@@ -195,6 +196,10 @@ pub enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+
+    /// Show detailed examples and common workflows
+    #[command(visible_alias = "ex")]
+    Examples,
 }
 
 #[derive(Subcommand)]
