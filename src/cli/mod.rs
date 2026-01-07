@@ -28,20 +28,20 @@ TinySecrets is an encrypted SQLite-backed .env replacement that never
 writes secrets to disk in plaintext.
 
 QUICK START:
-  ts init                              # Create encrypted store
-  ts config init myapp dev             # Create .tinysecrets.toml
-  ts set API_KEY                       # Set a secret (opens editor)
-  ts get API_KEY                       # Get a secret
-  ts run -- npm start                  # Run command with secrets
+  tinysecrets init                              # Create encrypted store
+  tinysecrets config init myapp dev             # Create .tinysecrets.toml
+  tinysecrets set API_KEY                       # Set a secret (opens editor)
+  tinysecrets get API_KEY                       # Get a secret
+  tinysecrets run -- npm start                  # Run command with secrets
 
 WITH EXPLICIT PROJECT/ENV:
-  ts set -p myapp -e prod API_KEY      # Specify project/env explicitly
-  ts run -p myapp -e prod -- npm start
-  ts list -p myapp                     # List all secrets for project
+  tinysecrets set -p myapp -e prod API_KEY      # Specify project/env explicitly
+  tinysecrets run -p myapp -e prod -- npm start
+  tinysecrets list -p myapp                     # List all secrets for project
 
 BULK IMPORT:
-  heroku config | ts import-env -p myapp -e staging
-  cat .env | ts import-env -p myapp -e dev
+  heroku config | tinysecrets import-env -p myapp -e staging
+  cat .env | tinysecrets import-env -p myapp -e dev
 "#)]
 pub struct Cli {
     #[command(subcommand)]

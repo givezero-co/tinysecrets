@@ -136,11 +136,12 @@ print_success() {
     printf "${GREEN}${BOLD}TinySecrets installed successfully!${NC}\n"
     printf "\n"
     printf "${BOLD}Quick start:${NC}\n"
-    printf "  ${CYAN}ts init${NC}                           # Create encrypted store\n"
-    printf "  ${CYAN}ts set myapp staging API_KEY${NC}      # Set a secret\n"
-    printf "  ${CYAN}ts run -p myapp -e staging -- cmd${NC} # Run with secrets\n"
+    printf "  ${CYAN}tinysecrets init${NC}                    # Create encrypted store\n"
+    printf "  ${CYAN}tinysecrets config init myapp dev${NC}  # Set up project defaults\n"
+    printf "  ${CYAN}tinysecrets set API_KEY${NC}            # Set a secret\n"
+    printf "  ${CYAN}tinysecrets run -- npm start${NC}       # Run with secrets injected\n"
     printf "\n"
-    printf "For more info: ${CYAN}ts --help${NC}\n"
+    printf "For more info: ${CYAN}tinysecrets examples${NC} or ${CYAN}tinysecrets --help${NC}\n"
 }
 
 # Main
