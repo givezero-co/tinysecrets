@@ -1,3 +1,4 @@
+pub mod config;
 pub mod delete;
 pub mod envs;
 pub mod export;
@@ -26,20 +27,20 @@ TinySecrets is an encrypted SQLite-backed .env replacement that never
 writes secrets to disk in plaintext.
 
 QUICK START:
-  tinysecrets init                           # Create encrypted store
-  tinysecrets set api staging API_KEY        # Set a secret (opens editor)
-  tinysecrets get api staging API_KEY        # Get a secret
-  tinysecrets run -p api -e staging -- cmd   # Run command with secrets
+  ts init                              # Create encrypted store
+  ts config init myapp dev             # Create .tinysecrets.toml
+  ts set API_KEY                       # Set a secret (opens editor)
+  ts get API_KEY                       # Get a secret
+  ts run -- npm start                  # Run command with secrets
 
-EXAMPLES:
-  tinysecrets set myapp prod DATABASE_URL    # Opens $EDITOR for value
-  tinysecrets set myapp prod API_KEY "sk-..." # Set directly from CLI
-  tinysecrets list -p myapp                  # List all secrets for project
-  tinysecrets run -p myapp -e prod -- npm start
+WITH EXPLICIT PROJECT/ENV:
+  ts set -p myapp -e prod API_KEY      # Specify project/env explicitly
+  ts run -p myapp -e prod -- npm start
+  ts list -p myapp                     # List all secrets for project
 
 BULK IMPORT:
-  heroku config | tinysecrets import-env myapp staging
-  cat .env | tinysecrets import-env myapp dev
+  heroku config | ts import-env -p myapp -e staging
+  cat .env | ts import-env -p myapp -e dev
 "#)]
 pub struct Cli {
     #[command(subcommand)]
@@ -55,10 +56,12 @@ pub enum Commands {
     /// Set a secret value
     #[command(visible_alias = "s")]
     Set {
-        /// Project name
-        project: String,
-        /// Environment (e.g., dev, staging, prod)
-        environment: String,
+        /// Project name (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        environment: Option<String>,
         /// Secret key name
         key: String,
         /// Secret value (opens $EDITOR if not provided)
@@ -68,10 +71,12 @@ pub enum Commands {
     /// Get a secret value
     #[command(visible_alias = "g")]
     Get {
-        /// Project name
-        project: String,
-        /// Environment
-        environment: String,
+        /// Project name (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        environment: Option<String>,
         /// Secret key name
         key: String,
         /// Get a specific version (from history)
@@ -93,10 +98,12 @@ pub enum Commands {
     /// Delete a secret
     #[command(visible_alias = "rm")]
     Delete {
-        /// Project name
-        project: String,
-        /// Environment
-        environment: String,
+        /// Project name (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        environment: Option<String>,
         /// Secret key name
         key: String,
     },
@@ -104,12 +111,12 @@ pub enum Commands {
     /// Run a command with secrets injected as environment variables
     #[command(visible_alias = "r")]
     Run {
-        /// Project name
+        /// Project name (uses .tinysecrets.toml if not specified)
         #[arg(short, long)]
-        project: String,
-        /// Environment
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
         #[arg(short, long)]
-        environment: String,
+        environment: Option<String>,
         /// Command and arguments to run
         #[arg(last = true, required = true)]
         command: Vec<String>,
@@ -117,12 +124,12 @@ pub enum Commands {
 
     /// Export secrets to an encrypted bundle
     Export {
-        /// Project name
+        /// Project name (uses .tinysecrets.toml if not specified)
         #[arg(short, long)]
-        project: String,
-        /// Environment
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
         #[arg(short, long)]
-        environment: String,
+        environment: Option<String>,
         /// Output file (stdout if not specified)
         #[arg(short, long)]
         output: Option<String>,
@@ -137,10 +144,12 @@ pub enum Commands {
     /// Import environment variables from stdin or file
     #[command(visible_alias = "ie")]
     ImportEnv {
-        /// Project name
-        project: String,
-        /// Environment
-        environment: String,
+        /// Project name (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        environment: Option<String>,
         /// Read from file instead of stdin
         #[arg(short, long)]
         file: Option<String>,
@@ -148,14 +157,16 @@ pub enum Commands {
 
     /// Show secret history
     History {
-        /// Project name
-        project: String,
-        /// Environment
-        environment: String,
+        /// Project name (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        project: Option<String>,
+        /// Environment (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        environment: Option<String>,
         /// Secret key name
         key: String,
         /// Number of entries to show
-        #[arg(short, long, default_value = "10")]
+        #[arg(short = 'n', long, default_value = "10")]
         limit: usize,
         /// Show the actual values
         #[arg(short, long)]
@@ -167,14 +178,22 @@ pub enum Commands {
 
     /// List environments for a project
     Envs {
-        /// Project name
-        project: String,
+        /// Project name (uses .tinysecrets.toml if not specified)
+        #[arg(short, long)]
+        project: Option<String>,
     },
 
     /// Manage system keychain integration
     Keychain {
         #[command(subcommand)]
         action: KeychainAction,
+    },
+
+    /// Manage local project configuration (.tinysecrets.toml)
+    #[command(visible_alias = "c")]
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
     },
 }
 
@@ -184,6 +203,28 @@ pub enum KeychainAction {
     Status,
     /// Remove passphrase from keychain
     Clear,
+}
+
+#[derive(Subcommand)]
+pub enum ConfigAction {
+    /// Create a .tinysecrets.toml in the current directory
+    Init {
+        /// Project name
+        project: String,
+        /// Default environment (optional)
+        environment: Option<String>,
+    },
+    /// Show current configuration
+    Show,
+    /// Update configuration values
+    Set {
+        /// Set default project
+        #[arg(short, long)]
+        project: Option<String>,
+        /// Set default environment
+        #[arg(short, long)]
+        environment: Option<String>,
+    },
 }
 
 /// Prompt for passphrase with confirmation for new stores

@@ -45,16 +45,16 @@ brew install givezero-co/tap/tinysecrets
 tinysecrets init
 
 # Set some secrets
-tinysecrets set myapp staging DATABASE_URL "postgres://localhost/myapp_staging"
-tinysecrets set myapp staging API_KEY      # Opens $EDITOR for secure input
-tinysecrets set myapp prod DATABASE_URL "postgres://prod-server/myapp"
+tinysecrets set -p myapp -e staging DATABASE_URL "postgres://localhost/myapp_staging"
+tinysecrets set -p myapp -e staging API_KEY      # Opens $EDITOR for secure input
+tinysecrets set -p myapp -e prod DATABASE_URL "postgres://prod-server/myapp"
 
 # Bulk import from existing sources
-heroku config | tinysecrets import-env myapp staging
-cat .env | tinysecrets import-env myapp dev
+heroku config | tinysecrets import-env -p myapp -e staging
+cat .env | tinysecrets import-env -p myapp -e dev
 
 # Get a secret
-tinysecrets get myapp staging API_KEY
+tinysecrets get -p myapp -e staging API_KEY
 
 # List all secrets
 tinysecrets list
@@ -63,6 +63,45 @@ tinysecrets list
 tinysecrets run -p myapp -e staging -- npm start
 tinysecrets run -p myapp -e prod -- ./deploy.sh
 ```
+
+## Project Configuration
+
+Create a `.tinysecrets.toml` in your project root to avoid typing `-p`/`-e` every time:
+
+```bash
+# Create config for this project
+tinysecrets config init myapp staging
+
+# Now commands are much cleaner!
+tinysecrets set API_KEY
+tinysecrets get API_KEY
+tinysecrets run -- npm start
+tinysecrets list
+```
+
+The config file is simple TOML:
+
+```toml
+project = "myapp"
+environment = "staging"
+```
+
+### Config Commands
+
+```bash
+# Create config
+tinysecrets config init <project> [environment]
+
+# Show current config
+tinysecrets config show
+
+# Update config values
+tinysecrets config set -p newproject
+tinysecrets config set -e production
+tinysecrets config set -p api -e dev
+```
+
+Config files are searched up the directory tree, so you can have different configs for different subdirectories if needed.
 
 ## Why TinySecrets?
 
@@ -96,33 +135,41 @@ Create a new encrypted secrets store. You'll be prompted to create a passphrase.
 tinysecrets init
 ```
 
-### `tinysecrets set <project> <environment> <key> [value]`
+### `tinysecrets set [-p project] [-e environment] <key> [value]`
 
 Set a secret. If no value is provided, opens `$EDITOR` for secure input.
+Project/environment can be omitted if `.tinysecrets.toml` exists.
 
 ```bash
-# Direct value (be careful with shell history!)
-tinysecrets set api staging DATABASE_URL "postgres://..."
+# With explicit project/environment
+tinysecrets set -p api -e staging DATABASE_URL "postgres://..."
+
+# With .tinysecrets.toml (cleaner!)
+tinysecrets set DATABASE_URL "postgres://..."
 
 # Opens editor (recommended for sensitive values)
-tinysecrets set api staging API_KEY
+tinysecrets set API_KEY
 
 # Aliases: tinysecrets s
 ```
 
-### `tinysecrets get <project> <environment> <key>`
+### `tinysecrets get [-p project] [-e environment] <key>`
 
 Get a secret value. Outputs just the value (great for scripts).
+Project/environment can be omitted if `.tinysecrets.toml` exists.
 
 ```bash
-tinysecrets get api staging DATABASE_URL
+tinysecrets get -p api -e staging DATABASE_URL
 # postgres://...
 
+# With .tinysecrets.toml
+tinysecrets get DATABASE_URL
+
 # Use in scripts
-export DB=$(ts get api staging DATABASE_URL)
+export DB=$(ts get DATABASE_URL)
 
 # Get a previous version
-tinysecrets get api staging DATABASE_URL --version 1
+tinysecrets get DATABASE_URL --version 1
 
 # Aliases: tinysecrets g
 ```
@@ -139,14 +186,19 @@ tinysecrets list -p api -e staging  # Secrets for api/staging
 # Aliases: tinysecrets ls
 ```
 
-### `tinysecrets run -p <project> -e <environment> -- <command>`
+### `tinysecrets run [-p project] [-e environment] -- <command>`
 
 Run a command with secrets injected as environment variables. **Secrets are only in process memory** - never written to disk or passed via CLI args.
+Project/environment can be omitted if `.tinysecrets.toml` exists.
 
 ```bash
+# With explicit flags
 tinysecrets run -p api -e staging -- npm start
-tinysecrets run -p api -e prod -- ./deploy.sh
-tinysecrets run -p api -e dev -- env | grep API  # See what's injected
+
+# With .tinysecrets.toml (much cleaner!)
+tinysecrets run -- npm start
+tinysecrets run -- ./deploy.sh
+tinysecrets run -- env | grep API  # See what's injected
 
 # Aliases: tinysecrets r
 ```
@@ -414,6 +466,7 @@ cargo build --release
 - [x] Bulk import from pipes (`tinysecrets import-env`)
 - [x] Version history with `--show` values
 - [x] Retrieve previous versions (`tinysecrets get --version`)
+- [x] Project config file (`.tinysecrets.toml`)
 - [ ] Shell completions (bash, zsh, fish)
 - [ ] `tinysecrets edit` - edit secret in place
 - [ ] `tinysecrets env` - output as .env format (for legacy tools)
