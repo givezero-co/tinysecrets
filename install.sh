@@ -17,7 +17,7 @@ BOLD='\033[1m'
 
 # Configuration
 REPO="givezero-co/tinysecrets"
-BINARY_NAME="ts"
+BINARY_NAME="tinysecrets"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
 # Detect OS and architecture

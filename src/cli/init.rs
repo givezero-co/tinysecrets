@@ -12,7 +12,7 @@ pub fn run() -> Result<()> {
             "✗".red(),
             path.display().to_string().yellow()
         );
-        eprintln!("  Use other ts commands to manage your secrets.");
+        eprintln!("  Use other tinysecrets commands to manage your secrets.");
         return Ok(());
     }
 
@@ -30,15 +30,15 @@ pub fn run() -> Result<()> {
     eprintln!();
     eprintln!("{}", "Quick start:".bold());
     eprintln!(
-        "  {} set a secret    ts set myapp staging DATABASE_URL",
+        "  {} set a secret    tinysecrets set myapp staging DATABASE_URL",
         "→".cyan()
     );
     eprintln!(
-        "  {} get a secret    ts get myapp staging DATABASE_URL",
+        "  {} get a secret    tinysecrets get myapp staging DATABASE_URL",
         "→".cyan()
     );
     eprintln!(
-        "  {} run with secrets ts run -p myapp -e staging -- npm start",
+        "  {} run with secrets tinysecrets run -p myapp -e staging -- npm start",
         "→".cyan()
     );
     eprintln!();

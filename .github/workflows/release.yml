@@ -47,13 +47,13 @@ jobs:
       - name: Package
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          ARCHIVE_NAME="ts-${VERSION}-${{ matrix.target }}"
+          ARCHIVE_NAME="tinysecrets-${VERSION}-${{ matrix.target }}"
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/ts dist/
+          cp target/${{ matrix.target }}/release/tinysecrets dist/
           cd dist
-          tar czvf "${ARCHIVE_NAME}.tar.gz" ts
+          tar czvf "${ARCHIVE_NAME}.tar.gz" tinysecrets
           shasum -a 256 "${ARCHIVE_NAME}.tar.gz" > "${ARCHIVE_NAME}.tar.gz.sha256"
-          rm ts  # Remove raw binary, only keep tarball
+          rm tinysecrets  # Remove raw binary, only keep tarball
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

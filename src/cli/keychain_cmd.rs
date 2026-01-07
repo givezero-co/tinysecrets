@@ -16,7 +16,7 @@ fn status() -> Result<()> {
         eprintln!("🔑 Passphrase is stored in system keychain");
         eprintln!("  Commands will use it automatically.");
         eprintln!();
-        eprintln!("  To remove: {}", "ts keychain clear".cyan());
+        eprintln!("  To remove: {}", "tinysecrets keychain clear".cyan());
     } else {
         eprintln!("{} No passphrase stored in keychain", "○".yellow());
         eprintln!("  You'll be prompted each time you run a command.");

@@ -4,7 +4,7 @@
 
 ```
 ┌──────────────┐
-│  ts CLI      │
+│  tinysecrets CLI      │
 │              │
 │  ┌────────┐  │
 │  │SQLite  │  │  ~/.tinysecrets/store.db
@@ -15,7 +15,7 @@
 
 No daemon. No ports. No migrations service. No infra. Just:
 
-- **One binary** (`ts`)
+- **One binary** (`tinysecrets`)
 - **One encrypted SQLite file** (`~/.tinysecrets/store.db`)
 
 ## Installation
@@ -42,26 +42,26 @@ brew install givezero-co/tap/tinysecrets
 
 ```bash
 # Initialize your secrets store (creates ~/.tinysecrets/store.db)
-ts init
+tinysecrets init
 
 # Set some secrets
-ts set myapp staging DATABASE_URL "postgres://localhost/myapp_staging"
-ts set myapp staging API_KEY      # Opens $EDITOR for secure input
-ts set myapp prod DATABASE_URL "postgres://prod-server/myapp"
+tinysecrets set myapp staging DATABASE_URL "postgres://localhost/myapp_staging"
+tinysecrets set myapp staging API_KEY      # Opens $EDITOR for secure input
+tinysecrets set myapp prod DATABASE_URL "postgres://prod-server/myapp"
 
 # Bulk import from existing sources
-heroku config | ts import-env myapp staging
-cat .env | ts import-env myapp dev
+heroku config | tinysecrets import-env myapp staging
+cat .env | tinysecrets import-env myapp dev
 
 # Get a secret
-ts get myapp staging API_KEY
+tinysecrets get myapp staging API_KEY
 
 # List all secrets
-ts list
+tinysecrets list
 
 # Run a command with secrets injected as environment variables
-ts run -p myapp -e staging -- npm start
-ts run -p myapp -e prod -- ./deploy.sh
+tinysecrets run -p myapp -e staging -- npm start
+tinysecrets run -p myapp -e prod -- ./deploy.sh
 ```
 
 ## Why TinySecrets?
@@ -88,89 +88,89 @@ ts run -p myapp -e prod -- ./deploy.sh
 
 ## Commands
 
-### `ts init`
+### `tinysecrets init`
 
 Create a new encrypted secrets store. You'll be prompted to create a passphrase.
 
 ```bash
-ts init
+tinysecrets init
 ```
 
-### `ts set <project> <environment> <key> [value]`
+### `tinysecrets set <project> <environment> <key> [value]`
 
 Set a secret. If no value is provided, opens `$EDITOR` for secure input.
 
 ```bash
 # Direct value (be careful with shell history!)
-ts set api staging DATABASE_URL "postgres://..."
+tinysecrets set api staging DATABASE_URL "postgres://..."
 
 # Opens editor (recommended for sensitive values)
-ts set api staging API_KEY
+tinysecrets set api staging API_KEY
 
-# Aliases: ts s
+# Aliases: tinysecrets s
 ```
 
-### `ts get <project> <environment> <key>`
+### `tinysecrets get <project> <environment> <key>`
 
 Get a secret value. Outputs just the value (great for scripts).
 
 ```bash
-ts get api staging DATABASE_URL
+tinysecrets get api staging DATABASE_URL
 # postgres://...
 
 # Use in scripts
 export DB=$(ts get api staging DATABASE_URL)
 
 # Get a previous version
-ts get api staging DATABASE_URL --version 1
+tinysecrets get api staging DATABASE_URL --version 1
 
-# Aliases: ts g
+# Aliases: tinysecrets g
 ```
 
-### `ts list [-p project] [-e environment]`
+### `tinysecrets list [-p project] [-e environment]`
 
 List secrets with optional filtering.
 
 ```bash
-ts list                    # All secrets
-ts list -p api             # All secrets for 'api' project
-ts list -p api -e staging  # Secrets for api/staging
+tinysecrets list                    # All secrets
+tinysecrets list -p api             # All secrets for 'api' project
+tinysecrets list -p api -e staging  # Secrets for api/staging
 
-# Aliases: ts ls
+# Aliases: tinysecrets ls
 ```
 
-### `ts run -p <project> -e <environment> -- <command>`
+### `tinysecrets run -p <project> -e <environment> -- <command>`
 
 Run a command with secrets injected as environment variables. **Secrets are only in process memory** - never written to disk or passed via CLI args.
 
 ```bash
-ts run -p api -e staging -- npm start
-ts run -p api -e prod -- ./deploy.sh
-ts run -p api -e dev -- env | grep API  # See what's injected
+tinysecrets run -p api -e staging -- npm start
+tinysecrets run -p api -e prod -- ./deploy.sh
+tinysecrets run -p api -e dev -- env | grep API  # See what's injected
 
-# Aliases: ts r
+# Aliases: tinysecrets r
 ```
 
-### `ts delete <project> <environment> <key>`
+### `tinysecrets delete <project> <environment> <key>`
 
 Delete a secret (archived in history).
 
 ```bash
-ts delete api staging OLD_KEY
+tinysecrets delete api staging OLD_KEY
 
-# Aliases: ts rm
+# Aliases: tinysecrets rm
 ```
 
-### `ts history <project> <environment> <key>`
+### `tinysecrets history <project> <environment> <key>`
 
 View the change history of a secret.
 
 ```bash
 # Show history (versions and timestamps)
-ts history api staging DATABASE_URL
+tinysecrets history api staging DATABASE_URL
 
 # Show history with actual values
-ts history api staging DATABASE_URL --show
+tinysecrets history api staging DATABASE_URL --show
 ```
 
 **Example output with `--show`:**
@@ -184,26 +184,26 @@ ts history api staging DATABASE_URL --show
     postgres://oldhost/db
 ```
 
-### `ts projects`
+### `tinysecrets projects`
 
 List all projects.
 
 ```bash
-ts projects
+tinysecrets projects
 ```
 
-### `ts envs <project>`
+### `tinysecrets envs <project>`
 
 List all environments for a project.
 
 ```bash
-ts envs api
+tinysecrets envs api
 # staging
 # production
 # development
 ```
 
-### `ts import-env <project> <environment>`
+### `tinysecrets import-env <project> <environment>`
 
 Bulk import environment variables from stdin or a file. Supports multiple formats:
 - `KEY=VALUE` (dotenv style)
@@ -212,38 +212,38 @@ Bulk import environment variables from stdin or a file. Supports multiple format
 
 ```bash
 # From heroku
-heroku config | ts import-env myapp staging
+heroku config | tinysecrets import-env myapp staging
 
 # From .env file
-cat .env | ts import-env myapp staging
+cat .env | tinysecrets import-env myapp staging
 
 # Or directly from file
-ts import-env myapp staging -f .env.production
+tinysecrets import-env myapp staging -f .env.production
 
 # From AWS Parameter Store
 aws ssm get-parameters-by-path --path /myapp/staging \
   --query 'Parameters[*].[Name,Value]' --output text \
   | awk '{print $1"="$2}' \
-  | ts import-env myapp staging
+  | tinysecrets import-env myapp staging
 
 # From 1Password
 op item get "API Keys" --format json \
   | jq -r '.fields[] | "\(.label)=\(.value)"' \
-  | ts import-env myapp staging
+  | tinysecrets import-env myapp staging
 
-# Aliases: ts ie
+# Aliases: tinysecrets ie
 ```
 
-### `ts export / import`
+### `tinysecrets export / import`
 
 Export secrets to an encrypted bundle (for sharing or backup).
 
 ```bash
 # Export
-ts export -p api -e staging -o api-staging.tsb
+tinysecrets export -p api -e staging -o api-staging.tsb
 
 # Import (requires same passphrase)
-ts import api-staging.tsb
+tinysecrets import api-staging.tsb
 ```
 
 ## Encryption
@@ -296,12 +296,12 @@ rsync ~/.tinysecrets/store.db remote:backup/
 
 ```bash
 # On your machine
-ts export -p api -e staging -o api-staging.tsb
+tinysecrets export -p api -e staging -o api-staging.tsb
 
 # Share the file + passphrase securely (Signal, 1Password, etc.)
 
 # On teammate's machine
-ts import api-staging.tsb
+tinysecrets import api-staging.tsb
 ```
 
 ### Option 2: Shared Store File
@@ -323,17 +323,17 @@ TinySecrets can store your passphrase in the system keychain so you don't have t
 
 ```bash
 # Check keychain status
-ts keychain status
+tinysecrets keychain status
 
 # Remove passphrase from keychain
-ts keychain clear
+tinysecrets keychain clear
 ```
 
 When you first run a command, you'll be asked if you want to save your passphrase to the keychain. This is secure because:
 
 - The keychain is protected by your system login password
 - Your secrets database is still encrypted - the keychain just stores the key
-- You can clear it anytime with `ts keychain clear`
+- You can clear it anytime with `tinysecrets keychain clear`
 
 ## Security Model
 
@@ -411,13 +411,13 @@ cargo build --release
 ## Roadmap
 
 - [x] Keychain integration (macOS, Linux, Windows)
-- [x] Bulk import from pipes (`ts import-env`)
+- [x] Bulk import from pipes (`tinysecrets import-env`)
 - [x] Version history with `--show` values
-- [x] Retrieve previous versions (`ts get --version`)
+- [x] Retrieve previous versions (`tinysecrets get --version`)
 - [ ] Shell completions (bash, zsh, fish)
-- [ ] `ts edit` - edit secret in place
-- [ ] `ts env` - output as .env format (for legacy tools)
-- [ ] `ts diff` - compare environments
+- [ ] `tinysecrets edit` - edit secret in place
+- [ ] `tinysecrets env` - output as .env format (for legacy tools)
+- [ ] `tinysecrets diff` - compare environments
 - [ ] Optional YubiKey/hardware key support
 - [ ] Team sync service (Option 2 from design)
 

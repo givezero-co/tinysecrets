@@ -10,7 +10,7 @@ keywords = ["secrets", "encryption", "cli", "dotenv", "sqlite"]
 categories = ["command-line-utilities", "cryptography"]
 
 [[bin]]
-name = "ts"
+name = "tinysecrets"
 path = "src/main.rs"
 
 [dependencies]

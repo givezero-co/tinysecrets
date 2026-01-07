@@ -15,7 +15,7 @@ pub mod set;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "ts")]
+#[command(name = "tinysecrets")]
 #[command(
     author,
     version,
@@ -26,20 +26,20 @@ TinySecrets is an encrypted SQLite-backed .env replacement that never
 writes secrets to disk in plaintext.
 
 QUICK START:
-  ts init                           # Create encrypted store
-  ts set api staging API_KEY        # Set a secret (opens editor)
-  ts get api staging API_KEY        # Get a secret
-  ts run -p api -e staging -- cmd   # Run command with secrets
+  tinysecrets init                           # Create encrypted store
+  tinysecrets set api staging API_KEY        # Set a secret (opens editor)
+  tinysecrets get api staging API_KEY        # Get a secret
+  tinysecrets run -p api -e staging -- cmd   # Run command with secrets
 
 EXAMPLES:
-  ts set myapp prod DATABASE_URL    # Opens $EDITOR for value
-  ts set myapp prod API_KEY "sk-..." # Set directly from CLI
-  ts list -p myapp                  # List all secrets for project
-  ts run -p myapp -e prod -- npm start
+  tinysecrets set myapp prod DATABASE_URL    # Opens $EDITOR for value
+  tinysecrets set myapp prod API_KEY "sk-..." # Set directly from CLI
+  tinysecrets list -p myapp                  # List all secrets for project
+  tinysecrets run -p myapp -e prod -- npm start
 
 BULK IMPORT:
-  heroku config | ts import-env myapp staging
-  cat .env | ts import-env myapp dev
+  heroku config | tinysecrets import-env myapp staging
+  cat .env | tinysecrets import-env myapp dev
 "#)]
 pub struct Cli {
     #[command(subcommand)]
