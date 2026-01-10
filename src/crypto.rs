@@ -44,8 +44,13 @@ impl MasterKey {
             .map_err(|e| anyhow::anyhow!("Invalid scrypt params: {}", e))?;
 
         let mut key = [0u8; 32];
-        scrypt(passphrase.expose_secret().as_bytes(), salt, &params, &mut key)
-            .map_err(|e| anyhow::anyhow!("Key derivation failed: {}", e))?;
+        scrypt(
+            passphrase.expose_secret().as_bytes(),
+            salt,
+            &params,
+            &mut key,
+        )
+        .map_err(|e| anyhow::anyhow!("Key derivation failed: {}", e))?;
 
         Ok(Self { key })
     }
@@ -83,7 +88,11 @@ pub fn encrypt(plaintext: &str, master_key: &MasterKey) -> Result<String> {
 }
 
 /// Decrypts ciphertext - handles both v2 (fast) and v1 (legacy age) formats
-pub fn decrypt(ciphertext: &str, master_key: &MasterKey, passphrase: &SecretString) -> Result<Secret<String>> {
+pub fn decrypt(
+    ciphertext: &str,
+    master_key: &MasterKey,
+    passphrase: &SecretString,
+) -> Result<Secret<String>> {
     let data = BASE64
         .decode(ciphertext)
         .context("Failed to decode base64 ciphertext")?;
@@ -96,7 +105,8 @@ pub fn decrypt(ciphertext: &str, master_key: &MasterKey, passphrase: &SecretStri
 
     match version {
         CRYPTO_VERSION => decrypt_v2(&data[1..], master_key),
-        LEGACY_VERSION | _ if is_age_format(&data) => decrypt_legacy(ciphertext, passphrase),
+        LEGACY_VERSION => decrypt_legacy(ciphertext, passphrase),
+        _ if is_age_format(&data) => decrypt_legacy(ciphertext, passphrase),
         _ => anyhow::bail!("Unknown encryption format version: {}", version),
     }
 }

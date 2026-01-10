@@ -56,7 +56,7 @@ impl Store {
     /// Initialize a new store with the given passphrase
     pub fn init(passphrase: SecretString) -> Result<Self> {
         use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
-        
+
         let path = Self::default_path()?;
 
         if path.exists() {
@@ -94,16 +94,20 @@ impl Store {
         // Store salt for key derivation
         conn.execute(
             "INSERT INTO metadata (key, value) VALUES ('encryption_salt', ?1)",
-            params![BASE64.encode(&salt)],
+            params![BASE64.encode(salt)],
         )?;
 
-        Ok(Self { conn, passphrase, master_key })
+        Ok(Self {
+            conn,
+            passphrase,
+            master_key,
+        })
     }
 
     /// Open an existing store
     pub fn open(passphrase: SecretString) -> Result<Self> {
         use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
-        
+
         let path = Self::default_path()?;
 
         if !path.exists() {
@@ -132,9 +136,11 @@ impl Store {
             |row| row.get::<_, String>(0),
         ) {
             Ok(salt_b64) => {
-                let salt_vec = BASE64.decode(&salt_b64)
+                let salt_vec = BASE64
+                    .decode(&salt_b64)
                     .context("Failed to decode encryption salt")?;
-                salt_vec.try_into()
+                salt_vec
+                    .try_into()
                     .map_err(|_| anyhow::anyhow!("Invalid salt length"))?
             }
             Err(_) => {
@@ -142,7 +148,7 @@ impl Store {
                 let salt = MasterKey::generate_salt();
                 conn.execute(
                     "INSERT INTO metadata (key, value) VALUES ('encryption_salt', ?1)",
-                    params![BASE64.encode(&salt)],
+                    params![BASE64.encode(salt)],
                 )?;
                 salt
             }
@@ -151,7 +157,11 @@ impl Store {
         // Derive master key (fast - ~100ms)
         let master_key = MasterKey::derive(&passphrase, &salt)?;
 
-        Ok(Self { conn, passphrase, master_key })
+        Ok(Self {
+            conn,
+            passphrase,
+            master_key,
+        })
     }
 
     /// Check if a store exists
@@ -506,7 +516,8 @@ impl Store {
         let mut imported = 0;
         for secret in &bundle.secrets {
             // Decrypt and re-encrypt to verify integrity
-            let decrypted = crypto::decrypt(&secret.encrypted_value, &self.master_key, &self.passphrase)?;
+            let decrypted =
+                crypto::decrypt(&secret.encrypted_value, &self.master_key, &self.passphrase)?;
             self.set(
                 &bundle.project,
                 &bundle.environment,

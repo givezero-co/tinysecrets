@@ -445,6 +445,9 @@ Keep your passphrase in a password manager!
 git clone https://github.com/givezero-co/tinysecrets
 cd tinysecrets
 
+# Setup pre-commit hooks (runs fmt + clippy before each commit)
+git config core.hooksPath .githooks
+
 # Build
 cargo build
 
@@ -455,6 +458,10 @@ cargo run -- get test dev API_KEY
 
 # Test
 cargo test
+
+# Lint (same as CI)
+cargo fmt --all -- --check
+cargo clippy -- -D warnings
 
 # Release build
 cargo build --release

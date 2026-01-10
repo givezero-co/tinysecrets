@@ -1,0 +1,25 @@
+#!/bin/sh
+# Pre-commit hook for tinysecrets
+# Runs the same checks as CI to catch issues early
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Check formatting
+echo "  → cargo fmt"
+if ! cargo fmt --all -- --check 2>/dev/null; then
+    echo ""
+    echo "❌ Formatting issues found. Run 'cargo fmt' to fix."
+    exit 1
+fi
+
+# Run clippy
+echo "  → cargo clippy"
+if ! cargo clippy -- -D warnings 2>/dev/null; then
+    echo ""
+    echo "❌ Clippy warnings found. Fix them before committing."
+    exit 1
+fi
+
+echo "✅ All checks passed!"
