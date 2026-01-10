@@ -10,6 +10,7 @@ pub mod import_env;
 pub mod init;
 pub mod keychain_cmd;
 pub mod list;
+pub mod migrate;
 pub mod projects;
 pub mod run;
 pub mod set;
@@ -200,6 +201,9 @@ pub enum Commands {
     /// Show detailed examples and common workflows
     #[command(visible_alias = "ex")]
     Examples,
+
+    /// Migrate secrets from legacy format to fast encryption
+    Migrate,
 }
 
 #[derive(Subcommand)]

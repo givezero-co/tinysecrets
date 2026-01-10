@@ -12,9 +12,9 @@ use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-use crate::crypto;
+use crate::crypto::{self, MasterKey};
 
-const SCHEMA_VERSION: i32 = 1;
+const SCHEMA_VERSION: i32 = 2;
 
 /// Secret entry with metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,6 +43,7 @@ pub struct SecretHistoryEntry {
 pub struct Store {
     conn: Connection,
     passphrase: SecretString,
+    master_key: MasterKey,
 }
 
 impl Store {
@@ -54,6 +55,8 @@ impl Store {
 
     /// Initialize a new store with the given passphrase
     pub fn init(passphrase: SecretString) -> Result<Self> {
+        use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+        
         let path = Self::default_path()?;
 
         if path.exists() {
@@ -74,7 +77,11 @@ impl Store {
         conn.execute_batch(include_str!("schema.sql"))
             .context("Failed to initialize database schema")?;
 
-        // Store passphrase verification
+        // Generate salt and derive master key
+        let salt = MasterKey::generate_salt();
+        let master_key = MasterKey::derive(&passphrase, &salt)?;
+
+        // Store passphrase verification (still uses age - only runs once)
         let verification = crypto::derive_verification(&passphrase)?;
         conn.execute(
             "INSERT INTO metadata (key, value) VALUES ('passphrase_verification', ?1)",
@@ -84,12 +91,19 @@ impl Store {
             "INSERT INTO metadata (key, value) VALUES ('schema_version', ?1)",
             params![SCHEMA_VERSION.to_string()],
         )?;
+        // Store salt for key derivation
+        conn.execute(
+            "INSERT INTO metadata (key, value) VALUES ('encryption_salt', ?1)",
+            params![BASE64.encode(&salt)],
+        )?;
 
-        Ok(Self { conn, passphrase })
+        Ok(Self { conn, passphrase, master_key })
     }
 
     /// Open an existing store
     pub fn open(passphrase: SecretString) -> Result<Self> {
+        use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+        
         let path = Self::default_path()?;
 
         if !path.exists() {
@@ -98,7 +112,7 @@ impl Store {
 
         let conn = Connection::open(&path).context("Failed to open SQLite database")?;
 
-        // Verify passphrase
+        // Verify passphrase (this is the slow operation - runs once)
         let verification: String = conn
             .query_row(
                 "SELECT value FROM metadata WHERE key = 'passphrase_verification'",
@@ -111,12 +125,43 @@ impl Store {
             anyhow::bail!("Invalid passphrase");
         }
 
-        Ok(Self { conn, passphrase })
+        // Get or create salt for key derivation
+        let salt: [u8; 32] = match conn.query_row(
+            "SELECT value FROM metadata WHERE key = 'encryption_salt'",
+            [],
+            |row| row.get::<_, String>(0),
+        ) {
+            Ok(salt_b64) => {
+                let salt_vec = BASE64.decode(&salt_b64)
+                    .context("Failed to decode encryption salt")?;
+                salt_vec.try_into()
+                    .map_err(|_| anyhow::anyhow!("Invalid salt length"))?
+            }
+            Err(_) => {
+                // Legacy store without salt - create one and migrate
+                let salt = MasterKey::generate_salt();
+                conn.execute(
+                    "INSERT INTO metadata (key, value) VALUES ('encryption_salt', ?1)",
+                    params![BASE64.encode(&salt)],
+                )?;
+                salt
+            }
+        };
+
+        // Derive master key (fast - ~100ms)
+        let master_key = MasterKey::derive(&passphrase, &salt)?;
+
+        Ok(Self { conn, passphrase, master_key })
     }
 
     /// Check if a store exists
     pub fn exists() -> Result<bool> {
         Ok(Self::default_path()?.exists())
+    }
+
+    /// Get a reference to the underlying connection (for migrations)
+    pub fn connection(&self) -> &Connection {
+        &self.conn
     }
 
     /// Set a secret value
@@ -128,7 +173,7 @@ impl Store {
         value: &str,
         description: Option<&str>,
     ) -> Result<()> {
-        let encrypted_value = crypto::encrypt(value, &self.passphrase)?;
+        let encrypted_value = crypto::encrypt(value, &self.master_key)?;
         let now = Utc::now();
 
         // Check if secret exists
@@ -201,7 +246,7 @@ impl Store {
 
         match encrypted {
             Some(enc) => {
-                let decrypted = crypto::decrypt(&enc, &self.passphrase)?;
+                let decrypted = crypto::decrypt(&enc, &self.master_key, &self.passphrase)?;
                 Ok(Some(decrypted.expose_secret().clone()))
             }
             None => Ok(None),
@@ -291,7 +336,7 @@ impl Store {
 
         let mut decrypted = Vec::new();
         for (key, encrypted) in secrets {
-            let value = crypto::decrypt(&encrypted, &self.passphrase)?;
+            let value = crypto::decrypt(&encrypted, &self.master_key, &self.passphrase)?;
             decrypted.push((key, value.expose_secret().clone()));
         }
 
@@ -359,7 +404,7 @@ impl Store {
 
         if let Some((current_version, encrypted)) = current {
             if current_version == version {
-                let decrypted = crypto::decrypt(&encrypted, &self.passphrase)?;
+                let decrypted = crypto::decrypt(&encrypted, &self.master_key, &self.passphrase)?;
                 return Ok(Some(decrypted.expose_secret().clone()));
             }
         }
@@ -377,7 +422,7 @@ impl Store {
 
         match encrypted {
             Some(enc) => {
-                let decrypted = crypto::decrypt(&enc, &self.passphrase)?;
+                let decrypted = crypto::decrypt(&enc, &self.master_key, &self.passphrase)?;
                 Ok(Some(decrypted.expose_secret().clone()))
             }
             None => Ok(None),
@@ -461,7 +506,7 @@ impl Store {
         let mut imported = 0;
         for secret in &bundle.secrets {
             // Decrypt and re-encrypt to verify integrity
-            let decrypted = crypto::decrypt(&secret.encrypted_value, &self.passphrase)?;
+            let decrypted = crypto::decrypt(&secret.encrypted_value, &self.master_key, &self.passphrase)?;
             self.set(
                 &bundle.project,
                 &bundle.environment,

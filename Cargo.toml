@@ -1,6 +1,6 @@
 [package]
 name = "tinysecrets"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 description = "An encrypted SQLite-backed .env replacement that never writes secrets to disk in plaintext"
 authors = ["tinysecrets contributors"]
@@ -20,9 +20,11 @@ clap = { version = "4.4", features = ["derive", "env"] }
 # Database
 rusqlite = { version = "0.31", features = ["bundled"] }
 
-# Encryption (age - modern, simple, secure)
-age = { version = "0.10", features = ["armor"] }
+# Encryption 
+age = { version = "0.10", features = ["armor"] }  # Still used for passphrase verification
 secrecy = "0.8"
+chacha20poly1305 = "0.10"  # Fast symmetric encryption for secrets
+scrypt = "0.11"            # Key derivation (used once per session)
 
 # Password handling
 rpassword = "7.3"
