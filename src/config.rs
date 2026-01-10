@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 const CONFIG_FILE: &str = ".tinysecrets.toml";
+const PROJECT_ENV_VAR: &str = "TINYSECRETS_PROJECT";
+const ENVIRONMENT_ENV_VAR: &str = "TINYSECRETS_ENV";
 
 /// Local project configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -93,38 +95,58 @@ impl ConfigResolver {
         Ok(Self { config })
     }
 
-    /// Resolve project: use CLI arg if provided, otherwise config
+    /// Resolve project: CLI arg > env var > config file
     pub fn project(&self, cli_arg: Option<&str>) -> Result<String> {
-        match cli_arg {
-            Some(p) => Ok(p.to_string()),
-            None => self
-                .config
-                .as_ref()
-                .and_then(|c| c.project.clone())
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "No project specified. Use -p/--project or create a {} file",
-                        CONFIG_FILE
-                    )
-                }),
+        // 1. CLI arg takes precedence
+        if let Some(p) = cli_arg {
+            return Ok(p.to_string());
         }
+
+        // 2. Check environment variable
+        if let Ok(p) = std::env::var(PROJECT_ENV_VAR) {
+            if !p.is_empty() {
+                return Ok(p);
+            }
+        }
+
+        // 3. Fall back to config file
+        self.config
+            .as_ref()
+            .and_then(|c| c.project.clone())
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "No project specified. Use -p/--project, set {}, or create a {} file",
+                    PROJECT_ENV_VAR,
+                    CONFIG_FILE
+                )
+            })
     }
 
-    /// Resolve environment: use CLI arg if provided, otherwise config
+    /// Resolve environment: CLI arg > env var > config file
     pub fn environment(&self, cli_arg: Option<&str>) -> Result<String> {
-        match cli_arg {
-            Some(e) => Ok(e.to_string()),
-            None => self
-                .config
-                .as_ref()
-                .and_then(|c| c.environment.clone())
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "No environment specified. Use -e/--environment or create a {} file",
-                        CONFIG_FILE
-                    )
-                }),
+        // 1. CLI arg takes precedence
+        if let Some(e) = cli_arg {
+            return Ok(e.to_string());
         }
+
+        // 2. Check environment variable
+        if let Ok(e) = std::env::var(ENVIRONMENT_ENV_VAR) {
+            if !e.is_empty() {
+                return Ok(e);
+            }
+        }
+
+        // 3. Fall back to config file
+        self.config
+            .as_ref()
+            .and_then(|c| c.environment.clone())
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "No environment specified. Use -e/--environment, set {}, or create a {} file",
+                    ENVIRONMENT_ENV_VAR,
+                    CONFIG_FILE
+                )
+            })
     }
 
     /// Get the loaded config (if any)
