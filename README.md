@@ -315,7 +315,51 @@ compose = ["anthropic", "stripe", "database"]  # Different AI provider!
 
 Each branch gets its own secret composition, all stored safely in the same encrypted database.
 
-For more details, see [`docs/PACKS_SPEC.md`](docs/PACKS_SPEC.md).
+### What Does the `.tinysecrets.toml` File Do?
+
+The TOML file controls which secrets are loaded. Here's a quick comparison:
+
+**Without packs (basic):**
+```toml
+project = "myapp"
+environment = "dev"
+```
+Running `ts run -- npm start` loads all flat secrets for myapp/dev.
+
+**With packs + compose:**
+```toml
+project = "myapp"
+environment = "dev"
+
+compose = [
+    "openai",
+    "stripe",
+    "database",
+]
+```
+Running `ts run -- npm start` loads ONLY these 3 packs (6 secrets total).
+
+**With packs, no compose:**
+```toml
+project = "myapp"
+environment = "dev"
+# No compose field
+```
+Running `ts run -- npm start` loads ALL packs for myapp/dev automatically.
+
+**Different branch, different packs:**
+```toml
+# feature branch
+compose = ["openai.new", "stripe", "database"]
+```
+Same commands, different secrets - perfect for testing new API providers!
+
+### Learn More About Packs
+
+- **[TOML Configuration Guide](docs/TOML_CONFIG_GUIDE.md)** - Detailed explanation of what the `.tinysecrets.toml` file does with different configurations
+- **[Complete Example Walkthrough](docs/PACKS_EXAMPLE.md)** - Step-by-step guide with common patterns
+- **[Technical Specification](docs/PACKS_SPEC.md)** - Full feature spec and implementation details
+- **[Example Config File](.tinysecrets.toml.example)** - Template configuration with comments
 
 ## Why TinySecrets?
 
