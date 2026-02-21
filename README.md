@@ -356,6 +356,7 @@ Same commands, different secrets - perfect for testing new API providers!
 
 ### Learn More About Packs
 
+- **[TOML Quick Reference](docs/TOML_QUICK_REFERENCE.md)** - One-page cheat sheet of common TOML patterns ⭐ Start here!
 - **[TOML Behavior Examples](docs/TOML_BEHAVIOR_EXAMPLES.md)** - See exact terminal output for different TOML configurations
 - **[TOML Configuration Guide](docs/TOML_CONFIG_GUIDE.md)** - Detailed explanation of what the `.tinysecrets.toml` file does
 - **[Complete Example Walkthrough](docs/PACKS_EXAMPLE.md)** - Step-by-step guide with common patterns
