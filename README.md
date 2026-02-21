@@ -103,6 +103,220 @@ tinysecrets config set -p api -e dev
 
 Config files are searched up the directory tree, so you can have different configs for different subdirectories if needed.
 
+## Packs: Organize Secrets into Composable Groups
+
+**Packs** let you organize secrets into logical groups and compose them dynamically. Think of packs as "modules" for your secrets - you can create different variants, mix and match them per branch, and keep your secrets organized as your project grows.
+
+### What is a Pack?
+
+A pack is a named collection of related secrets. For example:
+- `openai` pack contains `OPENAI_KEY`, `OPENAI_ENDPOINT`, `OPENAI_ORG`
+- `stripe` pack contains `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `database` pack contains `DATABASE_URL`, `DB_POOL_SIZE`
+
+### Quick Example: Organizing Your Secrets
+
+Let's say you have these flat secrets in your project:
+
+```bash
+OPENAI_KEY=sk-abc...
+OPENAI_ENDPOINT=https://api.openai.com
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+DATABASE_URL=postgres://localhost/mydb
+REDIS_URL=redis://localhost:6379
+```
+
+**Step 1: Group them into packs**
+
+Run the interactive grouping wizard:
+
+```bash
+ts pack group
+
+# The wizard analyzes prefixes and suggests groups:
+# ✓ Created 3 packs:
+#   openai    (2 keys)
+#   stripe    (2 keys)
+#   other     (2 keys)
+```
+
+This automatically creates packs and updates your `.tinysecrets.toml`:
+
+```toml
+project = "myapp"
+environment = "dev"
+
+compose = [
+    "openai",
+    "stripe",
+    "other",
+]
+```
+
+**Step 2: Refine your organization**
+
+Move keys from `other` into better-named packs:
+
+```bash
+# Create an infra pack with database and redis
+ts pack move other infra DATABASE_URL REDIS_URL
+# ✓ Moved 2 keys: other → infra
+# ✓ Added 'infra' to compose
+```
+
+**Step 3: Run your app with composed secrets**
+
+```bash
+ts run -- npm start
+# ✓ Composed 6 secrets from 3 packs (myapp/dev)
+```
+
+### Creating Pack Variants
+
+Packs shine when you need different versions of the same secrets. Common use case: testing a new API provider without affecting your main setup.
+
+```bash
+# Clone your current openai pack to create a backup
+ts pack clone openai openai.old
+
+# Create a new variant with different credentials
+ts pack set openai.new \
+    OPENAI_KEY="sk-new-key-123" \
+    OPENAI_ENDPOINT="https://api.openai.com/v2"
+
+# Switch which variant your branch uses by editing .tinysecrets.toml:
+compose = [
+    "openai.new",    # Changed from "openai"
+    "stripe",
+    "infra",
+]
+
+# Now run your app with the new OpenAI credentials
+ts run -- npm start
+```
+
+This is powerful for:
+- **Canary deployments**: Test new API keys on a feature branch
+- **Provider migrations**: Run old and new providers side-by-side
+- **Per-developer customization**: Each dev has their own variant
+
+### Working with Packs
+
+```bash
+# List all your packs
+ts pack list
+# 📦 myapp/dev
+#   ├─ openai (2 keys)
+#   │  ├─ .old (2 keys)
+#   │  └─ .new (2 keys)
+#   ├─ stripe (2 keys)
+#   └─ infra (2 keys)
+
+# Show what's in a specific pack
+ts pack show openai.new
+# 📦 openai.new (myapp/dev)
+#   • OPENAI_ENDPOINT  v1
+#   • OPENAI_KEY       v1
+
+# Preview what will be injected
+ts compose show
+# 📋 Compose: myapp/dev
+#
+# openai.new
+#   • OPENAI_ENDPOINT
+#   • OPENAI_KEY
+# stripe
+#   • STRIPE_SECRET_KEY
+#   • STRIPE_WEBHOOK_SECRET
+# infra
+#   • DATABASE_URL
+#   • REDIS_URL
+#
+# Total: 6 env vars from 3 packs
+# ✓ No conflicts
+
+# Add temporary packs without editing the config
+ts run --with monitoring -- npm test
+```
+
+### Backward Compatibility
+
+Don't want to use packs? No problem. All existing commands work exactly as before:
+
+```bash
+# These still work without packs
+ts set API_KEY "value"
+ts get API_KEY
+ts list
+ts run -- npm start
+```
+
+If you do create packs, existing commands become smarter:
+- `ts get DATABASE_URL` searches across all packs automatically
+- `ts set DATABASE_URL "new-value"` updates it wherever it exists
+- `ts run` loads all packs when no compose is specified
+
+### Real-World Example: Multi-Environment Setup
+
+```bash
+# You're working on the 'api' project
+cd ~/projects/api
+ts config init api dev
+
+# Import your existing .env file
+cat .env | ts import-env
+
+# Organize into packs
+ts pack group
+# ✓ Created packs: auth, payments, database, cache, monitoring
+
+# Create production environment with different credentials
+ts pack set -e prod auth \
+    JWT_SECRET="prod-secret-xyz" \
+    AUTH0_CLIENT_ID="prod-client-abc"
+
+ts pack set -e prod payments \
+    STRIPE_SECRET_KEY="sk_live_..."
+
+ts pack set -e prod database \
+    DATABASE_URL="postgres://prod-server/api"
+
+# Update prod config
+ts config set -e prod
+
+# Your .tinysecrets.toml now has:
+# project = "api"
+# environment = "prod"
+# compose = ["auth", "payments", "database", "cache", "monitoring"]
+
+# Deploy with prod secrets
+ts run -- ./deploy.sh
+# ✓ Composed 15 secrets from 5 packs (api/prod)
+```
+
+### Branch-Specific Secrets
+
+Different branches can compose different pack variants by having different `.tinysecrets.toml` files:
+
+**main branch** (`.tinysecrets.toml`):
+```toml
+project = "api"
+environment = "prod"
+compose = ["openai", "stripe", "database"]
+```
+
+**feature/test-anthropic branch** (`.tinysecrets.toml`):
+```toml
+project = "api"
+environment = "prod"
+compose = ["anthropic", "stripe", "database"]  # Different AI provider!
+```
+
+Each branch gets its own secret composition, all stored safely in the same encrypted database.
+
+For more details, see [`docs/PACKS_SPEC.md`](docs/PACKS_SPEC.md).
+
 ## Why TinySecrets?
 
 ### The Problem with .env Files
