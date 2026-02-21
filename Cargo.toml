@@ -1,6 +1,6 @@
 [package]
 name = "tinysecrets"
-version = "0.7.1"
+version = "0.8.0"
 edition = "2021"
 description = "An encrypted SQLite-backed .env replacement that never writes secrets to disk in plaintext"
 authors = ["tinysecrets contributors"]
@@ -58,6 +58,9 @@ colored = "2.1"
 edit = "0.1"
 
 # Note: We use std::os::unix::process::CommandExt for exec()
+
+[dev-dependencies]
+tempfile = "3"
 
 [profile.release]
 lto = true

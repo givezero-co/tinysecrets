@@ -18,6 +18,9 @@ pub struct Config {
     pub project: Option<String>,
     /// Default environment
     pub environment: Option<String>,
+    /// Compose: list of pack names to assemble at runtime
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compose: Option<Vec<String>>,
 }
 
 impl Config {
@@ -74,6 +77,7 @@ impl Config {
         let config = Config {
             project: Some(project.to_string()),
             environment: environment.map(String::from),
+            compose: None,
         };
         config.save()
     }
@@ -81,6 +85,24 @@ impl Config {
     /// Get the path to the found config file (if any)
     pub fn found_path() -> Result<Option<PathBuf>> {
         Self::find_config_file()
+    }
+
+    /// Add a pack name to the compose list (no-op if already present)
+    pub fn add_to_compose(&mut self, pack_name: &str) {
+        let compose = self.compose.get_or_insert_with(Vec::new);
+        if !compose.iter().any(|p| p == pack_name) {
+            compose.push(pack_name.to_string());
+        }
+    }
+
+    /// Remove a pack name from the compose list
+    pub fn remove_from_compose(&mut self, pack_name: &str) {
+        if let Some(compose) = &mut self.compose {
+            compose.retain(|p| p != pack_name);
+            if compose.is_empty() {
+                self.compose = None;
+            }
+        }
     }
 }
 
