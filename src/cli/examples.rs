@@ -130,6 +130,53 @@ CI/CD
   tinysecrets run -- ./deploy.sh
 
 
+PACKS: ORGANIZE SECRETS INTO GROUPS
+────────────────────────────────────
+  # Group your flat secrets into organized packs
+  tinysecrets pack group
+  # ✓ Created 3 packs: openai (2 keys), stripe (2 keys), infra (2 keys)
+
+  # List your packs
+  tinysecrets pack list
+  # 📦 myapp/dev
+  #   ├─ openai (2 keys)
+  #   ├─ stripe (2 keys)
+  #   └─ infra (2 keys)
+
+  # Show what's in a pack
+  tinysecrets pack show openai
+  # 📦 openai (myapp/dev)
+  #   • OPENAI_ENDPOINT  v1
+  #   • OPENAI_KEY       v1
+
+  # Create or update a pack with multiple secrets
+  tinysecrets pack set openai \
+    OPENAI_KEY="sk-abc123" \
+    OPENAI_ENDPOINT="https://api.openai.com"
+
+  # Create a variant (e.g., for testing new credentials)
+  tinysecrets pack clone openai openai.new
+  tinysecrets pack set openai.new OPENAI_KEY="sk-new-key-456"
+
+  # Preview what will be injected from your compose
+  tinysecrets compose show
+  # Total: 6 env vars from 3 packs
+
+  # Run with composed packs (reads from .tinysecrets.toml)
+  tinysecrets run -- npm start
+  # ✓ Composed 6 secrets from 3 packs (myapp/dev)
+
+  # Override compose from CLI
+  tinysecrets run --with monitoring -- npm test
+  tinysecrets run --compose openai.old,stripe,infra -- npm start
+
+  # Move keys between packs to reorganize
+  tinysecrets pack move other infra DATABASE_URL REDIS_URL
+
+  # Pack history
+  tinysecrets pack history openai OPENAI_KEY
+
+
 "#;
 
     // Print with some color highlighting
